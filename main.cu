@@ -54,7 +54,7 @@ int main() {
     printf("time:%f\n", milliseconds);
 
 	if (oldtree.size() != tree.size() ) {
-		printf("Wrong sizes: %ld %ld\n", oldtree.size(), tree.size());
+		printf("Wrong sizes: old:%ld new:%ld\n", oldtree.size(), tree.size());
 		return -1;
 	}
 	for (int i=0; i<oldtree.size(); i++) {

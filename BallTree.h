@@ -40,7 +40,7 @@ public:
         size_t n = balls->size();
 //        printf("Building BallTree (%d) ...\n", n);
         nr.resize(n);
-        tree.resize(n*2);
+        tree.resize(n*2-1);
         if (n > 0) {
             for (size_t i=0; i<n; ++i) nr[i] = i;
             build(0,n,-1,0);
