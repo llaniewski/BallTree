@@ -1,7 +1,13 @@
-#include "BallTree.h"
-#include "BallTree.hpp"
 #include <vector>
 #include <random>
+
+	#include "BallTree.h"
+	#include "BallTree.hpp"
+namespace old {
+	#undef BALLTREE_H
+	#include "old/BallTree.h"
+	#include "old/BallTree.hpp"
+};
 
 struct Balls {
     int n;
@@ -28,6 +34,12 @@ int main() {
         for (int j=0;j<3;j++) balls.pos[j][i] = pos_dist(random_engine);
         balls.rad[i] = rad_dist(random_engine);
     }
+    old::BallTree<Balls> oldtree;
+    oldtree.balls = &balls;
+	printf("building old ...\n");
+    oldtree.Build();
+	printf("done\n");
+
     BallTree<Balls> tree;
     tree.balls = &balls;
 	printf("building ...\n");
@@ -40,5 +52,26 @@ int main() {
 	float milliseconds = 0;
 	cudaEventElapsedTime(&milliseconds, start, stop);
     printf("time:%f\n", milliseconds);
+
+	if (oldtree.size() != tree.size() ) {
+		printf("Wrong sizes: %ld %ld\n", oldtree.size(), tree.size());
+		return -1;
+	}
+	for (int i=0; i<oldtree.size(); i++) {
+		tr_elem el1 = tree.Tree()[i];
+		old::tr_elem el2 = oldtree.Tree()[i];
+		bool sel = true;
+		sel &= el1.flag  == el2.flag;
+		sel &= el1.right == el2.right;
+		sel &= el1.back  == el2.back;
+		sel &= el1.a     == el2.a;
+		sel &= el1.b     == el2.b;
+
+		if (!sel) {
+			printf("Wrong !\n");
+			return -1;
+		}
+	}
+	
     return 0;
 }
