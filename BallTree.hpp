@@ -31,6 +31,7 @@ tr_addr_t BallTree<BALLS>::build (int ind, int n, int back, int node) {
         elem.flag = 4;
         elem.right = nr[ind];
         d = ind;
+        tree[node] = elem;
     } else {
         tr_real_t sum=0.0;
         tr_real_t max_span=-1;
@@ -74,13 +75,15 @@ tr_addr_t BallTree<BALLS>::build (int ind, int n, int back, int node) {
             }
         }
 //        printf("%d %3d %3d %lg %lg %lg %d --- %lg (%2.0lf%% %2.0lf%%)\n", node, ind, n, sum, v_min, v_max, d, v_max-v_min, 100.0*(d-ind)/(n-ind),100.0*(n-d)/(n-ind));
-        build(ind, d, node, node+1);
-        elem.right = build(d, n, back, node+2*(d-ind));
+        elem.right = node+2*(d-ind);
         elem.a = v_min;
         elem.b = v_max;
         elem.flag = dir;
+        tree[node] = elem;
+
+        build(ind, d, node, node+1);
+        build(d, n, back, node+2*(d-ind));
     }
-    tree[node] = elem;
     return node;
 }
 
