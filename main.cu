@@ -68,7 +68,13 @@ int main() {
 		sel &= el1.b     == el2.b;
 
 		if (!sel) {
-			printf("Wrong !\n");
+			printf("======================== Wrong ! ========================\n");
+			printf(": old:%d new:%d\n", (int) el1.flag   , (int) el2.flag  );
+			printf(": old:%d new:%d\n", (int)  el1.right , (int) el2.right  );
+			printf(": old:%d new:%d\n", (int)  el1.back  , (int) el2.back  );
+			printf(": old:%lf new:%lf diff: %lf\n", el1.a     , el2.a, el2.a - el1.a );
+			printf(": old:%lf new:%lf diff: %lf\n", el1.b     , el2.b, el2.b - el1.b );
+			printf("======================== Wrong ! ========================\n");
 			return -1;
 		}
 	}

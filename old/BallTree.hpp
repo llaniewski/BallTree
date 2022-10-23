@@ -31,6 +31,7 @@ tr_addr_t BallTree<BALLS>::build (int ind, int n, int back) {
     if (n-ind < 2) {
         elem.flag = 4;
         elem.right = nr[ind];
+        elem.a = elem.b = 0;
     } else {
         tr_real_t sum=0.0;
         tr_real_t max_span=-1;
