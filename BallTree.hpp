@@ -22,7 +22,7 @@ __host__ __device__ int half_f (BALLS* balls, int* nr, int i, int j, int dir, tr
     }
 }
 
-const int SMAX = 256;
+const int SMAX = 2048;
 const int threads = 1;
 int thread = 0;
 
@@ -103,22 +103,22 @@ void build (BALLS* balls, int* nr, tr_elem* tree, int N) {
     }
 }
 
-const int BUILD_BLOCK_SIZE = 1;
 
-template <class BALLS>
+template <int BUILD_BLOCK_SIZE, class BALLS>
 __global__ void buildgpu (BALLS* balls, int* nr, tr_elem* tree, int N) {
 //    printf("tree build(%d %d %d)\n", ind, n, back);
     int thi = threadIdx.x;
     int thn = blockDim.x;
-//    typedef cub::BlockScan<int, BUILD_BLOCK_SIZE> BlockScan;
-//    __shared__ typename BlockScan::TempStorage temp_storage;
+    typedef cub::BlockScan<int, BUILD_BLOCK_SIZE> Scan;
+//    typedef cub::WarpScan<int> Scan;
+    __shared__ typename Scan::TempStorage temp_storage;
     __shared__ int shr[4][SMAX];
     int spt = 1;
     __shared__ int tleaf;
     for (size_t i=thi; i<N; i+=thn) nr[i] = i;
     
     if (thi == 0) {
-        shr[0][spt] = 0; shr[1][spt] = N; shr[2][spt] = -1; shr[3][spt] = 0;
+        shr[0][0] = 0; shr[1][0] = N; shr[2][0] = -1; shr[3][0] = 0;
     }
         
     while (spt > 0) {
@@ -135,8 +135,8 @@ __global__ void buildgpu (BALLS* balls, int* nr, tr_elem* tree, int N) {
         }
         int leaf = (n-ind < 2) ? 0 : 1;
         int cleaf;
-//        BlockScan(temp_storage).ExclusiveSum(leaf, cleaf);
-        cleaf = 0;
+        Scan(temp_storage).ExclusiveSum(leaf, cleaf);
+//        cleaf = 0;
         if (thi == thn-1) {
             tleaf = cleaf + leaf;
         }
@@ -150,7 +150,7 @@ __global__ void buildgpu (BALLS* balls, int* nr, tr_elem* tree, int N) {
         int n2 = n1 + tleaf;
         spt = spt + tleaf + tleaf;
 
-        if (n == 0) {
+        if (n > 0) {
         if (n-ind < 2) {
             tr_elem elem;
             elem.back = back;
@@ -196,8 +196,8 @@ __global__ void buildgpu (BALLS* balls, int* nr, tr_elem* tree, int N) {
                     }
                 }
             }
-        tr_elem elem;
-        elem.back = back;
+            tr_elem elem;
+            elem.back = back;
             elem.right = node+2*(d-ind);
             elem.a = v_min;
             elem.b = v_max;

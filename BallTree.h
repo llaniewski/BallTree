@@ -20,8 +20,8 @@ struct tr_elem {
     tr_real_t b;
 };
 
-template <class BALLS>
-int half_f (BALLS * balls, int* nr, int i, int j, int dir, tr_real_t thr);    
+//template <class BALLS>
+//int half_f (BALLS * balls, int* nr, int i, int j, int dir, tr_real_t thr);    
 //template <class BALLS>
 //void build (BALLS* balls, int* nr, tr_elem* tree, int N);
 

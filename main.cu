@@ -25,12 +25,18 @@ struct Balls {
 };
 
 
-int main() {
-	cudaEvent_t start, stop;
-	cudaEventCreate(&start);
-	cudaEventCreate(&stop);
+int main(int argn, char** argv) {
+	cudaEvent_t start1, stop1, start2, stop2;
+	float milliseconds = 0;
+	cudaEventCreate(&start1);
+	cudaEventCreate(&stop1);
+	cudaEventCreate(&start2);
+	cudaEventCreate(&stop2);
 
     int n = 100000;
+    int thr = 16;
+	if (argn > 1) n = atoi(argv[1]);
+	if (argn > 2) thr = atoi(argv[2]);
     Balls balls;
     std::uniform_real_distribution<double> pos_dist(0, 1);
     std::uniform_real_distribution<double> rad_dist(0.01, 0.1);
@@ -43,9 +49,15 @@ int main() {
     }
     old::BallTree<Balls> oldtree;
     oldtree.balls = &balls;
-	printf("building old ...\n");
+    printf("building old ...\n");
+    cudaEventRecord(start1);
     oldtree.Build();
+	cudaEventRecord(stop1);
 	printf("done\n");
+
+	cudaEventSynchronize(stop1);
+	cudaEventElapsedTime(&milliseconds, start1, stop1);
+	printf("time:%f\n", milliseconds);
 
 //    BallTree<Balls> tree;
 //    tree.balls = &balls;
@@ -67,26 +79,25 @@ int main() {
 		cudaMemcpy( gballs, balls.balls, sizeof(ball)*N, cudaMemcpyHostToDevice  );
 		cudaMemcpy( ggballs, &cgballs, sizeof(Balls), cudaMemcpyHostToDevice  );
 	}
-	printf("building ...\n");
-	cudaEventRecord(start);
-	build( &balls, nr, tree, N); 
-	cudaEventRecord(stop);
+
+
+	printf("building gpu ...\n");
+	cudaEventRecord(start2);
+	switch (thr) {
+	case   2: buildgpu<   2 > <<< 1,   2 >>>( ggballs, gnr, gtree, N); break;
+	case   4: buildgpu<   4 > <<< 1,   4 >>>( ggballs, gnr, gtree, N); break;
+	case   8: buildgpu<   8 > <<< 1,   8 >>>( ggballs, gnr, gtree, N); break;
+	case  16: buildgpu<  16 > <<< 1,  16 >>>( ggballs, gnr, gtree, N); break;
+	case  32: buildgpu<  32 > <<< 1,  32 >>>( ggballs, gnr, gtree, N); break;
+	case  64: buildgpu<  64 > <<< 1,  64 >>>( ggballs, gnr, gtree, N); break;
+	case 128: buildgpu< 128 > <<< 1, 128 >>>( ggballs, gnr, gtree, N); break;
+	default: printf("wrong number of threads %d\n", thr); return -1;
+	}
+	cudaEventRecord(stop2);
 	printf("done\n");
 
-	cudaEventSynchronize(stop);
-	float milliseconds = 0;
-	cudaEventElapsedTime(&milliseconds, start, stop);
-	printf("time:%f\n", milliseconds);
-
-	printf("building ...\n");
-	cudaEventRecord(start);
-	buildgpu<<< 1, 1 >>>( ggballs, gnr, gtree, N); 
-	cudaEventRecord(stop);
-	printf("done\n");
-
-	cudaEventSynchronize(stop);
-//	float milliseconds = 0;
-	cudaEventElapsedTime(&milliseconds, start, stop);
+	cudaEventSynchronize(stop2);
+	cudaEventElapsedTime(&milliseconds, start2, stop2);
 	printf("time:%f\n", milliseconds);
 
 	cudaMemcpy( tree, gtree, sizeof(tr_elem)*M, cudaMemcpyDeviceToHost );
@@ -96,8 +107,8 @@ int main() {
 		return -1;
 	}
 	for (int i=0; i<M; i++) {
-		tr_elem el1 = tree[i];
-		old::tr_elem el2 = oldtree.Tree()[i];
+		tr_elem el2 = tree[i];
+		old::tr_elem el1 = oldtree.Tree()[i];
 		bool sel = true;
 		sel &= el1.flag  == el2.flag;
 		sel &= el1.right == el2.right;
@@ -107,11 +118,12 @@ int main() {
 
 		if (!sel) {
 			printf("======================== Wrong ! ========================\n");
-			printf(": old:%d new:%d\n", (int) el1.flag   , (int) el2.flag  );
-			printf(": old:%d new:%d\n", (int)  el1.right , (int) el2.right  );
-			printf(": old:%d new:%d\n", (int)  el1.back  , (int) el2.back  );
-			printf(": old:%lf new:%lf diff: %lf\n", el1.a     , el2.a, el2.a - el1.a );
-			printf(": old:%lf new:%lf diff: %lf\n", el1.b     , el2.b, el2.b - el1.b );
+			printf("index : %d\n", i );
+			printf("flag  : old:%d new:%d\n", (int) el1.flag  , (int) el2.flag  );
+			printf("right : old:%d new:%d\n", (int) el1.right , (int) el2.right  );
+			printf("back  : old:%d new:%d\n", (int) el1.back  , (int) el2.back  );
+			printf("a     : old:%lf new:%lf diff: %lf\n", el1.a     , el2.a, el2.a - el1.a );
+			printf("b     : old:%lf new:%lf diff: %lf\n", el1.b     , el2.b, el2.b - el1.b );
 			printf("======================== Wrong ! ========================\n");
 			return -1;
 		}
