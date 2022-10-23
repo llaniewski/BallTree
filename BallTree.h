@@ -20,19 +20,19 @@ struct tr_elem {
     tr_real_t b;
 };
 
-struct ball {
-    tr_real_t p[3];
-    tr_real_t r;
-};
+template <class BALLS>
+int half_f (BALLS * balls, int* nr, int i, int j, int dir, tr_real_t thr);    
+//template <class BALLS>
+//void build (BALLS* balls, int* nr, tr_elem* tree, int N);
+
 
 template <class BALLS>
 class BallTree {
 private:
     std::vector<tr_elem> tree;
     bool inBall(tr_addr_t i, tr_real_t* p);
-    int half (int i, int j, int dir, tr_real_t thr);
-    tr_addr_t build (int ind, int n, int back, int node_);
     std::vector<tr_addr_t> nr;
+    tr_addr_t build (int ind, int n, int back, int node_);
 public:
     BALLS* balls;
     inline void Build() {
